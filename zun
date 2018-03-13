@@ -88,6 +88,49 @@ fi
 # Functions
 # ---------
 
+
+# remove_uwsgi_config()  - Remove uwsgi files
+function remove_uwsgi_config {
+    sudo rm -rf $ZUN_UWSGI_CONF    
+}
+
+# write_uwsgi_config()	- Create uwsgi files
+function write_uwsgi_config {
+	sudo mkdir -p $ZUN_UWSGI_CONF
+	cat > $ZUN_UWSGI_CONF << EOF
+[uwsgi]
+http = 0.0.0.0:9517
+wsgi-file = <path_to_zun>/zun/api/app.wsgi
+plugins = python
+# This is running standalone
+master = true
+# Set die-on-term & exit-on-reload so that uwsgi shuts down
+exit-on-reload = true
+die-on-term = true
+# uwsgi recommends this to prevent thundering herd on accept.
+thunder-lock = true
+# Override the default size for headers from the 4k default. (mainly for keystone token)
+buffer-size = 65535
+enable-threads = true
+# Set the number of threads usually with the returns of command nproc
+threads = 8
+# Make sure the client doesn't try to re-use the connection.
+add-header = Connection: close
+# Set uid and gip to a appropriate user on your server. In many
+# installations ``zun`` will be correct.
+uid = zun
+gid = zun
+EOF
+
+}
+
+
+function is_service_enabled {
+    [[ ,${ENABLED_SERVICES} =~ ,"zun-" ]] && return 0
+    return 1
+}
+
+
 # cleanup_zun() - Remove residual data files, anything left over from previous
 # runs that a clean run would need to clean up
 function cleanup_zun {
@@ -101,7 +144,7 @@ function cleanup_zun {
         sudo docker rm -f $containers || true
     fi
 
-    remove_uwsgi_config "$ZUN_UWSGI_CONF" "$ZUN_UWSGI"
+    remove_uwsgi_config 
 }
 
 # configure_zun() - Set config files, create data dirs, etc
@@ -117,7 +160,7 @@ function configure_zun {
 
     create_api_paste_conf
 
-    write_uwsgi_config "$ZUN_UWSGI_CONF" "$ZUN_UWSGI" "/container"
+    write_uwsgi_config 
 
     if [[ "$USE_PYTHON3" = "True" ]]; then
         # Switch off glance->swift communication as swift fails under py3.x

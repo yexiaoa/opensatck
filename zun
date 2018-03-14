@@ -96,7 +96,7 @@ function remove_uwsgi_config {
 
 # write_uwsgi_config()	- Create uwsgi files
 function write_uwsgi_config {
-	sudo mkdir -p $ZUN_UWSGI_CONF
+	sudo mkdir $ZUN_CONF_DIR
 	cat > $ZUN_UWSGI_CONF << EOF
 [uwsgi]
 http = 0.0.0.0:9517
